@@ -52,31 +52,18 @@ func (s *authService) Register(ctx context.Context, req auth.RegisterRequest) (*
 		CreatedAt:    now,
 	}
 
-	pet := auth.Pet{
-		ID:                uuid.NewString(),
-		Name:              "Кита (K1-T4)",
-		Level:             1,
-		TotalXP:           0,
-		NextLevelXP:       100,
-		Stage:             "egg",
-		BatteryLevel:      100,
-		Status:            "happy",
-		IsActionAvailable: true,
-		UpdatedAt:         now,
-	}
-
 	session := auth.Session{
 		ID:        uuid.NewString(),
 		ExpiresAt: now.Add(604800 * time.Second), // 7 days
 		CreatedAt: now,
 	}
 
-	createdUser, createdSession, err := s.repo.CreateUserAndPet(ctx, user, pet, session)
+	createdUser, createdSession, err := s.repo.CreateUserAndSession(ctx, user, session)
 	if err != nil {
 		if errors.Is(err, repository.ErrEmailAlreadyExists) {
 			return nil, nil, ErrEmailAlreadyExists
 		}
-		return nil, nil, fmt.Errorf("failed to create user and pet: %w", err)
+		return nil, nil, fmt.Errorf("failed to create user and session: %w", err)
 	}
 
 	return createdUser, createdSession, nil

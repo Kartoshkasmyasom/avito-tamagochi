@@ -84,6 +84,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 
 func (h *AuthHandler) setSessionCookie(c *gin.Context, session *auth.Session) {
 	isSecure := os.Getenv("GIN_MODE") == "release"
+	c.SetSameSite(http.SameSiteLaxMode)
 	// MaxAge is calculated from now until expiration, ensuring it's always positive.
 	// If session.ExpiresAt is in the past, MaxAge will be 0 or negative, effectively expiring the cookie.
 	maxAge := int(time.Until(session.ExpiresAt).Seconds())
@@ -95,5 +96,6 @@ func (h *AuthHandler) setSessionCookie(c *gin.Context, session *auth.Session) {
 
 func (h *AuthHandler) clearSessionCookie(c *gin.Context) {
 	isSecure := os.Getenv("GIN_MODE") == "release"
+	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(sessionCookieName, "", -1, "/", "", isSecure, true) // MaxAge -1 clears the cookie
 }

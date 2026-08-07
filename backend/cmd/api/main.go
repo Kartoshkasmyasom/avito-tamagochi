@@ -7,8 +7,10 @@ import (
 	"os"
 
 	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/auth/handler"
+	authmiddleware "github.com/accelolabs/avito-tamagochi/backend/internal/domain/auth/middleware"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/auth/repository"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/auth/service"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/game"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 )
@@ -33,6 +35,13 @@ func main() {
 	authRepo := repository.NewPgRepository(db)
 	authService := service.NewAuthService(authRepo)
 	authHandler := handler.NewAuthHandler(authService)
+	petService := game.NewPetService(db)
+	tasksService := game.NewTasksService(db)
+	rewardsService := game.NewRewardsService(db)
+	leaderboardService := game.NewLeaderboardService(db)
+	summaryService := game.NewSummaryService(db)
+	gameHandler := game.NewHandler(petService, tasksService, rewardsService, leaderboardService, summaryService)
+	requireSession := authmiddleware.RequireSession(authRepo)
 
 	router := gin.Default()
 	v1 := router.Group("/api/v1")
@@ -46,6 +55,18 @@ func main() {
 			auth.POST("/register", authHandler.Register)
 			auth.POST("/login", authHandler.Login)
 			auth.POST("/logout", authHandler.Logout)
+		}
+
+		protected := v1.Group("", requireSession)
+		{
+			protected.GET("/pet", gameHandler.GetPet)
+			protected.POST("/pet/actions", gameHandler.PetAction)
+			protected.GET("/tasks", gameHandler.ListTasks)
+			protected.POST("/demo/activities", gameHandler.Activity)
+			protected.GET("/rewards", gameHandler.ListRewards)
+			protected.POST("/rewards/:rewardId/claim", gameHandler.ClaimReward)
+			protected.GET("/leaderboard", gameHandler.Leaderboard)
+			protected.GET("/summary/daily", gameHandler.Summary)
 		}
 	}
 

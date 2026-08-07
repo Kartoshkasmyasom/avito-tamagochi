@@ -25,20 +25,6 @@ type User struct {
 	CreatedAt    time.Time `json:"createdAt"`
 }
 
-type Pet struct {
-	ID                string
-	OwnerID           string
-	Name              string
-	Level             int
-	TotalXP           int
-	NextLevelXP       int
-	Stage             string
-	BatteryLevel      int
-	Status            string
-	IsActionAvailable bool
-	UpdatedAt         time.Time
-}
-
 type Session struct {
 	ID        string
 	UserID    string
