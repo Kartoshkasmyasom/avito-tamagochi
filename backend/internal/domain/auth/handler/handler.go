@@ -72,7 +72,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		if err := h.service.Logout(c.Request.Context(), sessionID); err != nil {
 			// Log the error but don't fail the request, as the goal is to ensure the client is logged out.
 			// In a real app, you might want to log this for monitoring.
-			c.Error(err) // Use c.Error to log the error with Gin's logger
+			_ = c.Error(err) // Use c.Error to log the error with Gin's logger
 		}
 	}
 
