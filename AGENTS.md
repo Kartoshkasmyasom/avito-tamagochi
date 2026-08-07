@@ -29,6 +29,7 @@ cd frontend && npm run lint && npm run build
 - Only the backend calculates XP, levels, and rewards.
 - Use transactions and idempotency for state-changing operations.
 - Do not change the public API without updating its documentation.
+- Do not modify `api/openapi.yaml` without explicit user approval.
 - Cover new business logic with unit tests.
 - Run all relevant checks before completing a task.
 - Do not commit `.env`, secrets, binaries, `node_modules`, or `dist`.
@@ -42,6 +43,6 @@ cd frontend && npm run lint && npm run build
 - Ensured the use of Argon2id for password hashing and verification.
 - Implemented email normalization (trimming and lowercasing).
 - Set up session management using HttpOnly cookies.
-- Created a transactional registration process that creates a user and a pet.
+- Added an application-level registration flow that creates the user/session through Auth and initializes the pet through Pet.
 - Implemented the specified error handling and response structure.
 - Updated the database schema and main application to support the new functionality.
