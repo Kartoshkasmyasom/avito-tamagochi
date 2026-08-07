@@ -27,7 +27,7 @@ func (s *service) List(ctx context.Context, userID string) (*TasksResponse, erro
 		return nil, err
 	}
 	date := progression.MoscowDate(now)
-	if err := ensure(ctx, s.db, userID, date); err != nil {
+	if err := ensureTasks(ctx, s.db, userID, date); err != nil {
 		return nil, err
 	}
 	rows, err := s.db.QueryContext(ctx, `SELECT id,activity_type,progress,target,xp_reward,completed_at FROM daily_tasks WHERE user_id=$1 AND task_date=$2 ORDER BY activity_type`, userID, date)
@@ -86,7 +86,7 @@ func (s *service) ProcessActivity(ctx context.Context, userID string, req DemoAc
 	var completed *time.Time
 	err = tx.QueryRowContext(ctx, `SELECT id,progress,target,xp_reward,completed_at FROM daily_tasks WHERE user_id=$1 AND task_date=$2 AND activity_type=$3 FOR UPDATE`, userID, date, req.ActivityType).Scan(&id, &progress, &target, &xp, &completed)
 	if errors.Is(err, sql.ErrNoRows) {
-		if err = ensureTx(ctx, tx, userID, date); err != nil {
+		if err = ensureTasks(ctx, tx, userID, date); err != nil {
 			return err
 		}
 		err = tx.QueryRowContext(ctx, `SELECT id,progress,target,xp_reward,completed_at FROM daily_tasks WHERE user_id=$1 AND task_date=$2 AND activity_type=$3 FOR UPDATE`, userID, date, req.ActivityType).Scan(&id, &progress, &target, &xp, &completed)

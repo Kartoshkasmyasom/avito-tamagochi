@@ -7,7 +7,7 @@ import "time"
 type RegisterRequest struct {
 	Email       string `json:"email" binding:"required,email,max=254"`
 	Password    string `json:"password" binding:"required,min=8,max=128"`
-	DisplayName string `json:"displayName" binding:"required,min=2,max=32,alphanum"`
+	DisplayName string `json:"displayName" binding:"required,min=2,max=32"`
 }
 
 type LoginRequest struct {

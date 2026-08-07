@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/game/progression"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/game/rewards"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/game/tasks"
 )
 
 type Service interface {
@@ -34,7 +36,11 @@ func (s *service) Get(ctx context.Context, userID string) (*DailySummary, error)
 			rows.Close()
 			return nil, err
 		}
-		r.CompletedTaskTitles = append(r.CompletedTaskTitles, taskText(a))
+		r.CompletedTaskTitles = append(r.CompletedTaskTitles, tasks.Title(a))
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return nil, err
 	}
 	rows.Close()
 	rows, err = s.db.QueryContext(ctx, `SELECT reward_type FROM user_rewards WHERE user_id=$1 AND unlocked_at >= $2 AND unlocked_at <= $3 ORDER BY required_level`, userID, start, now)
@@ -47,23 +53,7 @@ func (s *service) Get(ctx context.Context, userID string) (*DailySummary, error)
 		if err := rows.Scan(&typ); err != nil {
 			return nil, err
 		}
-		r.UnlockedRewardTitles = append(r.UnlockedRewardTitles, rewardText(typ))
+		r.UnlockedRewardTitles = append(r.UnlockedRewardTitles, rewards.Title(typ))
 	}
 	return r, rows.Err()
-}
-func taskText(a string) string {
-	switch a {
-	case "listingViewed":
-		return "Посмотреть объявление"
-	case "favoriteAdded":
-		return "Добавить в избранное"
-	default:
-		return "Опубликовать объявление"
-	}
-}
-func rewardText(t string) string {
-	if t == "listingPromotion" {
-		return "Продвижение объявления"
-	}
-	return "Авито Доставка"
 }

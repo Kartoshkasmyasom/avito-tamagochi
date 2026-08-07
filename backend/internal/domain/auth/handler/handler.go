@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
-	"time"
+	"regexp"
 
 	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/auth"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/auth/service"
@@ -17,6 +17,8 @@ const (
 	sessionCookieName = "session_id"
 	sessionMaxAge     = 604800 // 7 days in seconds
 )
+
+var displayNamePattern = regexp.MustCompile(`^[A-Za-z_-]+$`)
 
 type AuthHandler struct {
 	service      service.AuthService
@@ -35,6 +37,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	var req auth.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorJSON(c, http.StatusBadRequest, "validation_error", err.Error())
+		return
+	}
+	if !displayNamePattern.MatchString(req.DisplayName) {
+		response.ErrorJSON(c, http.StatusBadRequest, "validation_error", "displayName must contain only latin letters, underscores, or hyphens")
 		return
 	}
 
@@ -94,11 +100,7 @@ func (h *AuthHandler) setSessionCookie(c *gin.Context, session *auth.Session) {
 	c.SetSameSite(http.SameSiteLaxMode)
 	// MaxAge is calculated from now until expiration, ensuring it's always positive.
 	// If session.ExpiresAt is in the past, MaxAge will be 0 or negative, effectively expiring the cookie.
-	maxAge := int(time.Until(session.ExpiresAt).Seconds())
-	if maxAge < 0 {
-		maxAge = 0
-	}
-	c.SetCookie(sessionCookieName, session.ID, maxAge, "/", "", isSecure, true)
+	c.SetCookie(sessionCookieName, session.ID, sessionMaxAge, "/", "", isSecure, true)
 }
 
 func (h *AuthHandler) clearSessionCookie(c *gin.Context) {

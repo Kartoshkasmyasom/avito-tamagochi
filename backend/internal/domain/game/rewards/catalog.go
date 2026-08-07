@@ -6,3 +6,8 @@ func rewardText(t string) (string, string) {
 	}
 	return "Авито Доставка", "Бонус на Авито Доставку"
 }
+
+func Title(t string) string {
+	title, _ := rewardText(t)
+	return title
+}

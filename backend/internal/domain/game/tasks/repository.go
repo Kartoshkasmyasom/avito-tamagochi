@@ -19,17 +19,14 @@ func requirePet(ctx context.Context, db *sql.DB, userID string) error {
 	}
 	return nil
 }
-func ensure(ctx context.Context, db *sql.DB, userID, date string) error {
+
+type executor interface {
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
+}
+
+func ensureTasks(ctx context.Context, db executor, userID, date string) error {
 	for _, d := range definitions() {
 		if _, err := db.ExecContext(ctx, `INSERT INTO daily_tasks(id,user_id,task_date,activity_type,progress,target,xp_reward) VALUES($1,$2,$3,$4,0,$5,$6) ON CONFLICT DO NOTHING`, uuid.NewString(), userID, date, d.activity, d.target, d.xp); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-func ensureTx(ctx context.Context, tx *sql.Tx, userID, date string) error {
-	for _, d := range definitions() {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO daily_tasks(id,user_id,task_date,activity_type,progress,target,xp_reward) VALUES($1,$2,$3,$4,0,$5,$6) ON CONFLICT DO NOTHING`, uuid.NewString(), userID, date, d.activity, d.target, d.xp); err != nil {
 			return err
 		}
 	}

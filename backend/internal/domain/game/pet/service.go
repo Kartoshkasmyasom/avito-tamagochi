@@ -69,7 +69,7 @@ func (s *service) Charge(ctx context.Context, userID string) (*PetActionResult, 
 	}
 	decay(p, now)
 	if p.CooldownEndsAt != nil && p.CooldownEndsAt.After(now) {
-		return nil, ErrCooldown
+		return nil, NewCooldownError(now, *p.CooldownEndsAt)
 	}
 	oldLevel, oldStage := p.Level, p.Stage
 	added := min(25, 100-p.BatteryLevel)

@@ -13,6 +13,17 @@ func TestLevelForXP(t *testing.T) {
 		}
 	}
 }
+
+func TestXPForLevel(t *testing.T) {
+	for _, tt := range []struct {
+		level int
+		xp    int
+	}{{1, 0}, {2, 100}, {5, 700}, {7, 1350}, {8, 1700}} {
+		if got := XPForLevel(tt.level); got != tt.xp {
+			t.Errorf("XPForLevel(%d) = %d, want %d", tt.level, got, tt.xp)
+		}
+	}
+}
 func TestStageForLevel(t *testing.T) {
 	for _, tt := range []struct {
 		level int

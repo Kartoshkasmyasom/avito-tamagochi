@@ -102,20 +102,5 @@ func (s *service) Claim(ctx context.Context, userID, rewardID string) (*Reward, 
 }
 func levelOnly(xp int) int { level, _ := progression.LevelForXP(xp); return level }
 func levelXP(level int) int {
-	switch level {
-	case 2:
-		return 100
-	case 3:
-		return 250
-	case 4:
-		return 450
-	case 5:
-		return 700
-	case 6:
-		return 1000
-	case 7:
-		return 1350
-	default:
-		return 0
-	}
+	return progression.XPForLevel(level)
 }

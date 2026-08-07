@@ -15,6 +15,17 @@ func LevelForXP(xp int) (level, next int) {
 	return level, levelThresholds[len(levelThresholds)-1] + 350
 }
 
+func XPForLevel(level int) int {
+	if level <= 1 {
+		return 0
+	}
+	index := level - 2
+	if index >= len(levelThresholds) {
+		return levelThresholds[len(levelThresholds)-1] + 350
+	}
+	return levelThresholds[index]
+}
+
 func StageForLevel(level int) string {
 	switch {
 	case level >= 7:
@@ -41,13 +52,15 @@ func StatusForBattery(battery int) string {
 	}
 }
 
-func MoscowDate(t time.Time) string { return t.In(moscow()).Format("2006-01-02") }
+var moscowLocation = loadMoscow()
+
+func MoscowDate(t time.Time) string { return t.In(moscowLocation).Format("2006-01-02") }
 func MoscowMidnight(t time.Time) time.Time {
-	local := t.In(moscow())
-	return time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, moscow())
+	local := t.In(moscowLocation)
+	return time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, moscowLocation)
 }
 func NextMoscowMidnight(t time.Time) time.Time { return MoscowMidnight(t).AddDate(0, 0, 1) }
-func moscow() *time.Location {
+func loadMoscow() *time.Location {
 	loc, err := time.LoadLocation("Europe/Moscow")
 	if err != nil {
 		return time.FixedZone("MSK", 3*60*60)

@@ -11,6 +11,11 @@ func taskText(a string) (string, string) {
 	}
 }
 
+func Title(activity string) string {
+	title, _ := taskText(activity)
+	return title
+}
+
 type definition struct {
 	activity   string
 	target, xp int
