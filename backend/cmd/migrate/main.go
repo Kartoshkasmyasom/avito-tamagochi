@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/accelolabs/avito-tamagochi/backend/internal/platform/migrations"
 	_ "github.com/lib/pq"
+	"github.com/pressly/goose/v3"
 )
 
 func main() {
@@ -33,7 +33,10 @@ func main() {
 	if directory == "" {
 		directory = "/app/migrations"
 	}
-	if err := migrations.Apply(ctx, db, directory); err != nil {
+	if err := goose.SetDialect("postgres"); err != nil {
+		log.Fatalf("set migration dialect: %v", err)
+	}
+	if err := goose.UpContext(ctx, db, directory); err != nil {
 		log.Fatalf("apply migrations: %v", err)
 	}
 	log.Println("database migrations applied")
