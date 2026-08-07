@@ -25,6 +25,7 @@ type AuthService interface {
 	Register(ctx context.Context, req auth.RegisterRequest) (*auth.User, *auth.Session, error)
 	Login(ctx context.Context, req auth.LoginRequest) (*auth.User, *auth.Session, error)
 	Logout(ctx context.Context, sessionID string) error
+	DeleteUser(ctx context.Context, userID string) error
 }
 
 type authService struct {
@@ -103,6 +104,10 @@ func (s *authService) Login(ctx context.Context, req auth.LoginRequest) (*auth.U
 
 func (s *authService) Logout(ctx context.Context, sessionID string) error {
 	return s.repo.DeleteSession(ctx, sessionID)
+}
+
+func (s *authService) DeleteUser(ctx context.Context, userID string) error {
+	return s.repo.DeleteUser(ctx, userID)
 }
 
 func (s *authService) hashPassword(password string) (string, error) {

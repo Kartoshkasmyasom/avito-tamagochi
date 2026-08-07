@@ -6,11 +6,17 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/accelolabs/avito-tamagochi/backend/internal/app/registration"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/auth/handler"
 	authmiddleware "github.com/accelolabs/avito-tamagochi/backend/internal/domain/auth/middleware"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/auth/repository"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/auth/service"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/game"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/game/leaderboard"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/game/pet"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/game/rewards"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/game/summary"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/game/tasks"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 )
@@ -34,12 +40,13 @@ func main() {
 
 	authRepo := repository.NewPgRepository(db)
 	authService := service.NewAuthService(authRepo)
-	authHandler := handler.NewAuthHandler(authService)
-	petService := game.NewPetService(db)
-	tasksService := game.NewTasksService(db)
-	rewardsService := game.NewRewardsService(db)
-	leaderboardService := game.NewLeaderboardService(db)
-	summaryService := game.NewSummaryService(db)
+	petService := pet.NewService(db)
+	registrationService := registration.NewService(authService, petService)
+	authHandler := handler.NewAuthHandler(authService, registrationService)
+	tasksService := tasks.NewService(db)
+	rewardsService := rewards.NewService(db)
+	leaderboardService := leaderboard.NewService(db)
+	summaryService := summary.NewService(db)
 	gameHandler := game.NewHandler(petService, tasksService, rewardsService, leaderboardService, summaryService)
 	requireSession := authmiddleware.RequireSession(authRepo)
 

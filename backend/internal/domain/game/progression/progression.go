@@ -1,4 +1,4 @@
-package game
+package progression
 
 import "time"
 
@@ -42,14 +42,11 @@ func StatusForBattery(battery int) string {
 }
 
 func MoscowDate(t time.Time) string { return t.In(moscow()).Format("2006-01-02") }
-
 func MoscowMidnight(t time.Time) time.Time {
 	local := t.In(moscow())
 	return time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, moscow())
 }
-
 func NextMoscowMidnight(t time.Time) time.Time { return MoscowMidnight(t).AddDate(0, 0, 1) }
-
 func moscow() *time.Location {
 	loc, err := time.LoadLocation("Europe/Moscow")
 	if err != nil {

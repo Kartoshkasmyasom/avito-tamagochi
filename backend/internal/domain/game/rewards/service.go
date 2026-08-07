@@ -1,28 +1,29 @@
-package game
+package rewards
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/game/progression"
 )
 
-type RewardsService interface {
+type Service interface {
 	List(context.Context, string) (*RewardsResponse, error)
 	Claim(context.Context, string, string) (*Reward, error)
 }
-type rewardsService struct {
+type service struct {
 	db  *sql.DB
 	now func() time.Time
 }
 
-func NewRewardsService(db *sql.DB) RewardsService { return &rewardsService{db: db, now: time.Now} }
-func (s *rewardsService) List(ctx context.Context, userID string) (*RewardsResponse, error) {
-	now := s.now()
-	if err := ensurePet(ctx, s.db, userID, now); err != nil {
+func NewService(db *sql.DB) Service { return &service{db: db, now: time.Now} }
+func (s *service) List(ctx context.Context, userID string) (*RewardsResponse, error) {
+	if err := requirePet(ctx, s.db, userID); err != nil {
 		return nil, err
 	}
-	if err := ensureRewards(ctx, s.db, userID); err != nil {
+	if err := ensure(ctx, s.db, userID); err != nil {
 		return nil, err
 	}
 	var xp int
@@ -34,34 +35,34 @@ func (s *rewardsService) List(ctx context.Context, userID string) (*RewardsRespo
 		return nil, err
 	}
 	defer rows.Close()
-	result := &RewardsResponse{Items: []*Reward{}}
+	r := &RewardsResponse{Items: []*Reward{}}
 	for rows.Next() {
-		r := &Reward{}
+		x := &Reward{}
 		var required int
-		if err := rows.Scan(&r.ID, &r.Type, &required, &r.ClaimedAt); err != nil {
+		if err := rows.Scan(&x.ID, &x.Type, &required, &x.ClaimedAt); err != nil {
 			return nil, err
 		}
-		r.RequiredLevel = required
-		r.Title, r.Description = rewardText(r.Type)
-		r.CurrentXP = xp
-		r.RequiredXP = levelXP(required)
-		if r.ClaimedAt != nil {
-			r.Status = "claimed"
-		} else if levelForXPOnly(xp) >= required {
-			r.Status = "available"
+		x.RequiredLevel = required
+		x.Title, x.Description = rewardText(x.Type)
+		x.CurrentXP = xp
+		x.RequiredXP = levelXP(required)
+		if x.ClaimedAt != nil {
+			x.Status = "claimed"
+		} else if levelOnly(xp) >= required {
+			x.Status = "available"
 		} else {
-			r.Status = "locked"
+			x.Status = "locked"
 		}
-		result.Items = append(result.Items, r)
+		r.Items = append(r.Items, x)
 	}
-	return result, rows.Err()
+	return r, rows.Err()
 }
-func (s *rewardsService) Claim(ctx context.Context, userID, rewardID string) (*Reward, error) {
+func (s *service) Claim(ctx context.Context, userID, rewardID string) (*Reward, error) {
 	now := s.now()
-	if err := ensurePet(ctx, s.db, userID, now); err != nil {
+	if err := requirePet(ctx, s.db, userID); err != nil {
 		return nil, err
 	}
-	if err := ensureRewards(ctx, s.db, userID); err != nil {
+	if err := ensure(ctx, s.db, userID); err != nil {
 		return nil, err
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -72,9 +73,11 @@ func (s *rewardsService) Claim(ctx context.Context, userID, rewardID string) (*R
 	var typ string
 	var required int
 	var claimed *time.Time
-	if err = tx.QueryRowContext(ctx, `SELECT reward_type,required_level,claimed_at FROM user_rewards WHERE id=$1 AND user_id=$2 FOR UPDATE`, rewardID, userID).Scan(&typ, &required, &claimed); errors.Is(err, sql.ErrNoRows) {
+	err = tx.QueryRowContext(ctx, `SELECT reward_type,required_level,claimed_at FROM user_rewards WHERE id=$1 AND user_id=$2 FOR UPDATE`, rewardID, userID).Scan(&typ, &required, &claimed)
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrRewardNotFound
-	} else if err != nil {
+	}
+	if err != nil {
 		return nil, err
 	}
 	var level, xp int
@@ -85,7 +88,7 @@ func (s *rewardsService) Claim(ctx context.Context, userID, rewardID string) (*R
 		return nil, ErrRewardLocked
 	}
 	if claimed == nil {
-		claimed = ptrTime(now)
+		claimed = &now
 		if _, err = tx.ExecContext(ctx, `UPDATE user_rewards SET claimed_at=$1 WHERE id=$2`, claimed, rewardID); err != nil {
 			return nil, err
 		}
@@ -97,4 +100,22 @@ func (s *rewardsService) Claim(ctx context.Context, userID, rewardID string) (*R
 	r.Title, r.Description = rewardText(typ)
 	return r, nil
 }
-func levelForXPOnly(xp int) int { level, _ := LevelForXP(xp); return level }
+func levelOnly(xp int) int { level, _ := progression.LevelForXP(xp); return level }
+func levelXP(level int) int {
+	switch level {
+	case 2:
+		return 100
+	case 3:
+		return 250
+	case 4:
+		return 450
+	case 5:
+		return 700
+	case 6:
+		return 1000
+	case 7:
+		return 1350
+	default:
+		return 0
+	}
+}

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/auth"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/auth/repository"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/http/response"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,7 +24,8 @@ func RequireSession(repo repository.AuthRepository) gin.HandlerFunc {
 				unauthorized(c)
 				return
 			}
-			c.AbortWithStatusJSON(http.StatusInternalServerError, auth.ErrorResponse{Code: "internal_error", Message: "Internal server error"})
+			response.ErrorJSON(c, http.StatusInternalServerError, "internal_error", "Internal server error")
+			c.Abort()
 			return
 		}
 		c.Set("userID", session.UserID)
@@ -33,5 +34,6 @@ func RequireSession(repo repository.AuthRepository) gin.HandlerFunc {
 }
 
 func unauthorized(c *gin.Context) {
-	c.AbortWithStatusJSON(http.StatusUnauthorized, auth.ErrorResponse{Code: "unauthorized", Message: "Authentication is required"})
+	response.ErrorJSON(c, http.StatusUnauthorized, "unauthorized", "Authentication is required")
+	c.Abort()
 }

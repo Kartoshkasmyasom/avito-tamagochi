@@ -31,10 +31,3 @@ type Session struct {
 	ExpiresAt time.Time
 	CreatedAt time.Time
 }
-
-// --- ERROR RESPONSE ---
-
-type ErrorResponse struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}

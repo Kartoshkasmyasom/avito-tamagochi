@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"os"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/auth"
 	"github.com/accelolabs/avito-tamagochi/backend/internal/domain/auth/service"
+	"github.com/accelolabs/avito-tamagochi/backend/internal/http/response"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,27 +19,32 @@ const (
 )
 
 type AuthHandler struct {
-	service service.AuthService
+	service      service.AuthService
+	registration RegistrationService
 }
 
-func NewAuthHandler(service service.AuthService) *AuthHandler {
-	return &AuthHandler{service: service}
+type RegistrationService interface {
+	Register(context.Context, auth.RegisterRequest) (*auth.User, *auth.Session, error)
+}
+
+func NewAuthHandler(service service.AuthService, registration RegistrationService) *AuthHandler {
+	return &AuthHandler{service: service, registration: registration}
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req auth.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, auth.ErrorResponse{Code: "validation_error", Message: err.Error()})
+		response.ErrorJSON(c, http.StatusBadRequest, "validation_error", err.Error())
 		return
 	}
 
-	user, session, err := h.service.Register(c.Request.Context(), req)
+	user, session, err := h.registration.Register(c.Request.Context(), req)
 	if err != nil {
 		if errors.Is(err, service.ErrEmailAlreadyExists) {
-			c.JSON(http.StatusConflict, auth.ErrorResponse{Code: "email_already_exists", Message: "Email is already registered"})
+			response.ErrorJSON(c, http.StatusConflict, "email_already_exists", "Email is already registered")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, auth.ErrorResponse{Code: "internal_error", Message: "Failed to register user"})
+		response.ErrorJSON(c, http.StatusInternalServerError, "internal_error", "Failed to register user")
 		return
 	}
 
@@ -48,17 +55,17 @@ func (h *AuthHandler) Register(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req auth.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, auth.ErrorResponse{Code: "validation_error", Message: err.Error()})
+		response.ErrorJSON(c, http.StatusBadRequest, "validation_error", err.Error())
 		return
 	}
 
 	user, session, err := h.service.Login(c.Request.Context(), req)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
-			c.JSON(http.StatusUnauthorized, auth.ErrorResponse{Code: "invalid_credentials", Message: "Invalid email or password"})
+			response.ErrorJSON(c, http.StatusUnauthorized, "invalid_credentials", "Invalid email or password")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, auth.ErrorResponse{Code: "internal_error", Message: "Failed to login"})
+		response.ErrorJSON(c, http.StatusInternalServerError, "internal_error", "Failed to login")
 		return
 	}
 

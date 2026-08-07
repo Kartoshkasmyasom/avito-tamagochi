@@ -24,6 +24,7 @@ type AuthRepository interface {
 	FindUserByEmail(ctx context.Context, email string) (*auth.User, error)
 	CreateSession(ctx context.Context, session auth.Session) (*auth.Session, error)
 	DeleteSession(ctx context.Context, sessionID string) error
+	DeleteUser(ctx context.Context, userID string) error
 	FindSession(ctx context.Context, sessionID string) (*auth.Session, error)
 }
 
@@ -95,6 +96,13 @@ func (r *pgRepository) DeleteSession(ctx context.Context, sessionID string) erro
 	_, err := r.db.ExecContext(ctx, query, sessionID)
 	if err != nil {
 		return fmt.Errorf("failed to delete session: %w", err)
+	}
+	return nil
+}
+
+func (r *pgRepository) DeleteUser(ctx context.Context, userID string) error {
+	if _, err := r.db.ExecContext(ctx, `DELETE FROM users WHERE id = $1`, userID); err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
 	}
 	return nil
 }
