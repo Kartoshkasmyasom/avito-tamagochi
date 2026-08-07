@@ -16,7 +16,7 @@ paths:
   /auth/register:
     post:
       operationId: registerUser
-      summary: Register a user, pet, and session
+      summary: Register a user and session
       security: []
       requestBody:
         required: true
